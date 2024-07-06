@@ -3463,8 +3463,8 @@ MonoBehaviour:
   upMovement: 0
   downMovement: 0
   movementSpeed: 5
-  yawSpeed: 50
-  minDistance: 2
+  minLookAtDistance: 2
+  maxLookAtDistance: 80
   lookAtRotationSpeed: 10
 --- !u!1 &1864734327
 GameObject:

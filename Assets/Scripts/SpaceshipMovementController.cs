@@ -18,15 +18,15 @@ public class SpaceshipMovementController : MonoBehaviour
     [SerializeField] float downMovement;
 
     [SerializeField] float movementSpeed = 5f;
-    [SerializeField] float yawSpeed = 50f;
 
-    [SerializeField] float minDistance = 2f;
+    [SerializeField] float minLookAtDistance = 2f;
+    [SerializeField] float maxLookAtDistance = 12f;
     [SerializeField] float lookAtRotationSpeed = 10f;
 
     // Start is called before the first frame update
     void Start()
     {
-        shipTransform = GetComponent<Transform>();
+        shipTransform = GameObject.Find("Spaceship").GetComponent<Transform>();
         shipModelTransform = GetComponent<Transform>().Find("Model");
         cursorWorldSpacePosition = GameManagers.cursorLocationInWorldSpace.transform;
         cameraAnchorLookPointTransform = GetComponent<Transform>().Find("CameraAnchorLookPoint");
@@ -69,11 +69,11 @@ public class SpaceshipMovementController : MonoBehaviour
 
         // A
         shipTransform.position += transform.right * rightMovement * movementSpeed * Time.deltaTime;
-        shipTransform.Rotate(0, rightMovement * yawSpeed * Time.deltaTime, 0);
+        //shipTransform.Rotate(0, rightMovement * yawSpeed * Time.deltaTime, 0);
 
         // D
         shipTransform.position -= transform.right * leftMovement * movementSpeed * Time.deltaTime;
-        shipTransform.Rotate(0, -(leftMovement * yawSpeed * Time.deltaTime), 0);
+        //shipTransform.Rotate(0, -(leftMovement * yawSpeed * Time.deltaTime), 0);
 
         // Space
         shipTransform.position += transform.up * upMovement * movementSpeed * Time.deltaTime;
@@ -85,10 +85,9 @@ public class SpaceshipMovementController : MonoBehaviour
     void lookAt()
     {
         float distance = Vector3.Distance(shipTransform.position, cursorWorldSpacePosition.position);
-        Debug.Log(distance);
         Quaternion targetRotation;
 
-        if (distance > minDistance) targetRotation = Quaternion.LookRotation(cursorWorldSpacePosition.position - shipModelTransform.position);
+        if (distance > minLookAtDistance && distance < maxLookAtDistance) targetRotation = Quaternion.LookRotation(cursorWorldSpacePosition.position - shipModelTransform.position);
         else targetRotation = Quaternion.LookRotation(defaultSpaceshipLookPoint.position - shipModelTransform.position);
 
         shipModelTransform.rotation = Quaternion.Slerp(shipModelTransform.rotation, targetRotation, lookAtRotationSpeed * Time.deltaTime);

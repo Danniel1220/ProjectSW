@@ -6,6 +6,7 @@ using UnityEngine;
 public class CameraControl : MonoBehaviour
 {
     private Cinemachine3rdPersonFollow cinemachine3RdPersonFollow;
+    private Transform shipTransform;
 
     private Transform cameraAnchor;
     private Transform cameraAnchorLookPoint;
@@ -29,6 +30,7 @@ public class CameraControl : MonoBehaviour
     void Start()
     {
         cinemachine3RdPersonFollow = GetComponentInChildren<Cinemachine3rdPersonFollow>();
+        shipTransform = GameObject.Find("Spaceship").GetComponent<Transform>();
         cameraAnchor = GameObject.Find("Spaceship").transform.Find("CameraAnchor").GetComponent<Transform>();
         cameraAnchorLookPoint = GameObject.Find("Spaceship").transform.Find("CameraAnchorLookPoint").GetComponent<Transform>();
     }
@@ -68,8 +70,12 @@ public class CameraControl : MonoBehaviour
             // if the mouse moved on x axis on screen, rotate the anchor look point around the anchor
             if (delta.x != 0)
             {
-                cameraAnchorLookPoint.RotateAround(cameraAnchor.position, Vector3.up, delta.x * Time.deltaTime * cameraXMultiplier);
+                //cameraAnchorLookPoint.RotateAround(cameraAnchor.position, Vector3.up, delta.x * Time.deltaTime * cameraXMultiplier);
+                //defaultSpaceshipLookPoint.RotateAround(cameraAnchor.position, Vector3.up, delta.x * Time.deltaTime * cameraXMultiplier);
+
+                shipTransform.RotateAround(shipTransform.position, Vector3.up, delta.x * cameraXMultiplier * Time.deltaTime);
             }
+
         }
     }
 
