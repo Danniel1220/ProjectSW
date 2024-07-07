@@ -17,6 +17,8 @@ public class SpaceshipShellShooter : MonoBehaviour
 
     GameObject cursorLocationInWorldSpace;
 
+    float shellMaxDispersion = 0.2f;
+
 
     void Start()
     {
@@ -39,8 +41,6 @@ public class SpaceshipShellShooter : MonoBehaviour
     {
         if(Input.GetMouseButtonDown(0)) 
         {
-            Debug.Log("lmbutton");
-
             shootShell(leftWingBarrel1ShootPoint, cursorLocationInWorldSpace.transform.position);
             shootShell(leftWingBarrel2ShootPoint, cursorLocationInWorldSpace.transform.position);
             shootShell(leftWingBarrel3ShootPoint, cursorLocationInWorldSpace.transform.position);
@@ -55,11 +55,38 @@ public class SpaceshipShellShooter : MonoBehaviour
 
     private void shootShell(GameObject barrel, Vector3 target)
     {
-        GameObject shellGameObject = Instantiate(
+        // add shell dispersion to the target location
+        target += getRandomDispersion();
+        Vector3 targetDirection = target - barrel.transform.position;
+
+        RaycastHit rayCastHit;
+
+        Debug.DrawRay(barrel.transform.position, targetDirection, Color.yellow, 1f);
+        // figure out whats the first object in the way of the shell as it shoots out towards the target
+        if (Physics.Raycast(barrel.transform.position, targetDirection, out rayCastHit, Mathf.Infinity))
+        {
+            GameObject shellGameObject = Instantiate(
                 shellPrefab,
                 barrel.transform.position,
-                Quaternion.LookRotation(target - barrel.transform.position));
-        ShellBehaviour shellScript = shellGameObject.AddComponent<ShellBehaviour>();
-        shellScript.setTargetPosition(target);
+                Quaternion.LookRotation(rayCastHit.point - barrel.transform.position));
+            ShellBehaviour shellScript = shellGameObject.AddComponent<ShellBehaviour>();
+            shellScript.setTargetPosition(rayCastHit.point);
+        }
+        else
+        {
+            Debug.LogError("Raycast failed for a shell");
+        }
+    }
+
+    private Vector3 getRandomDispersion()
+    {
+        Vector3 randomDispersion = new Vector3(
+            Random.Range(-shellMaxDispersion, shellMaxDispersion),
+            Random.Range(-shellMaxDispersion, shellMaxDispersion),
+            Random.Range(-shellMaxDispersion, shellMaxDispersion));
+
+        Debug.Log(randomDispersion.ToString());
+
+        return randomDispersion;
     }
 }
