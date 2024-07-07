@@ -14,6 +14,7 @@ public class SpaceshipShellShooter : MonoBehaviour
     GameObject rightWingBarrel4ShootPoint;
 
     GameObject shellPrefab;
+    GameObject shellLaunchParticleSystem;
 
     GameObject cursorLocationInWorldSpace;
 
@@ -33,6 +34,7 @@ public class SpaceshipShellShooter : MonoBehaviour
         rightWingBarrel4ShootPoint = GameObject.Find("Spaceship/Model/RWing/ShellShootPoint4");
 
         shellPrefab = Resources.Load("Prefabs/Shell") as GameObject;
+        shellLaunchParticleSystem = Resources.Load("ParticleSystems/ps_shell_launch") as GameObject;
 
         cursorLocationInWorldSpace = GameManagers.cursorLocationInWorldSpace;
     }
@@ -71,6 +73,7 @@ public class SpaceshipShellShooter : MonoBehaviour
                 Quaternion.LookRotation(rayCastHit.point - barrel.transform.position));
             ShellBehaviour shellScript = shellGameObject.AddComponent<ShellBehaviour>();
             shellScript.setTargetPosition(rayCastHit.point);
+            GameObject particleSystem = Instantiate(shellLaunchParticleSystem, barrel.transform.position, Quaternion.identity);
         }
         else
         {
@@ -80,13 +83,9 @@ public class SpaceshipShellShooter : MonoBehaviour
 
     private Vector3 getRandomDispersion()
     {
-        Vector3 randomDispersion = new Vector3(
+        return new Vector3(
             Random.Range(-shellMaxDispersion, shellMaxDispersion),
             Random.Range(-shellMaxDispersion, shellMaxDispersion),
             Random.Range(-shellMaxDispersion, shellMaxDispersion));
-
-        Debug.Log(randomDispersion.ToString());
-
-        return randomDispersion;
     }
 }
