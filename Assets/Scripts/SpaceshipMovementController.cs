@@ -16,8 +16,9 @@ public class SpaceshipMovementController : MonoBehaviour
     float leftMovement;
     float upMovement;
     float downMovement;
+    bool[] inputValues = new bool[6];
 
-    float movementSpeed = 5f;
+    [SerializeField] float movementSpeed = 20f;
 
     float minLookAtDistance = 2f;
     float maxLookAtDistance = 12f;
@@ -38,69 +39,72 @@ public class SpaceshipMovementController : MonoBehaviour
 
     void Update()
     {
-        if(Input.GetKey(KeyCode.W) == true)
-        {
-            forwardMovement = 1f;
-        }
-        else forwardMovement = 0f;
-
-        if(Input.GetKey(KeyCode.S) == true) backwardMovement = 1f;
-        else backwardMovement = 0f;
-
-        if (Input.GetKey(KeyCode.A) == true) leftMovement = 1f;
-        else leftMovement = 0f;
-
-        if (Input.GetKey(KeyCode.D) == true) rightMovement = 1f;
-        else rightMovement = 0f;
-
-        if (Input.GetKey(KeyCode.Space) == true) upMovement = 1f;
-        else upMovement = 0f;
-
-        if (Input.GetKey(KeyCode.LeftShift) == true) downMovement = 1f;
-        else downMovement = 0f;
-
-        movement();
-        orientation();
+        getKeyboardInput();
+        handleMovement();
     }
 
-    void movement()
+    private void getKeyboardInput()
+    {
+        if (Input.GetKey(KeyCode.W) == true) inputValues[0] = true;
+        else inputValues[0] = false;
+
+        if (Input.GetKey(KeyCode.A) == true) inputValues[1] = true;
+        else inputValues[1] = false;
+
+        if (Input.GetKey(KeyCode.S) == true) inputValues[2] = true;
+        else inputValues[2] = false;
+
+        if (Input.GetKey(KeyCode.D) == true) inputValues[3] = true;
+        else inputValues[3] = false;
+
+        if (Input.GetKey(KeyCode.Space) == true) inputValues[4] = true;
+        else inputValues[4] = false;
+
+        if (Input.GetKey(KeyCode.LeftShift) == true) inputValues[5] = true;
+        else inputValues[5] = false;
+    }
+
+    private void handleMovement()
     {
         // W
-        shipTransform.RotateAround(gravityBoundGameObject.transform.position, shipTransform.forward, forwardMovement * movementSpeed * Time.deltaTime * 5);
-        //shipTransform.position += transform.forward * forwardMovement * movementSpeed * Time.deltaTime;
-
-        // S
-        shipTransform.position -= transform.forward * backwardMovement *  movementSpeed * Time.deltaTime;
-
-
+        if (inputValues[0])
+        {
+            shipTransform.position += transform.forward * movementSpeed * Time.deltaTime;
+        }
         // A
-        shipTransform.position += transform.right * rightMovement * movementSpeed * Time.deltaTime;
-
-
+        if (inputValues[1])
+        {
+            shipTransform.position -= transform.right * movementSpeed * Time.deltaTime;
+        }
+        // S
+        if (inputValues[2])
+        {
+            shipTransform.position -= transform.forward *  movementSpeed * Time.deltaTime;
+        }
         // D
-        shipTransform.position -= transform.right * leftMovement * movementSpeed * Time.deltaTime;
-
-
+        if (inputValues[3])
+        {
+            shipTransform.position += transform.right * movementSpeed * Time.deltaTime;
+        }
         // Space
-        //shipTransform.position += transform.up * upMovement * movementSpeed * Time.deltaTime;
-        // going up means moving away from the body we are gravitationally bound to
-        shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, -movementSpeed * upMovement * Time.deltaTime);
-
+        if (inputValues[4])
+        {
+            // going up means moving away from the body we are gravitationally bound to
+            shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, -movementSpeed * Time.deltaTime);
+            heightAbovePlanet += movementSpeed * Time.deltaTime; 
+        }
         // Left Shift
-        //shipTransform.position -= transform.up * downMovement * movementSpeed * Time.deltaTime;
-        // going down means moving towards the body we are gravitationally bound to
-        shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, movementSpeed * downMovement * Time.deltaTime);
+        if (inputValues[5])
+        {
+            // going down means moving towards the body we are gravitationally bound to
+            shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, movementSpeed * Time.deltaTime);
+            heightAbovePlanet -= movementSpeed * Time.deltaTime;
+        }
 
-    }
-
-    void orientation()
-    {
-        float shipCursorDistance = Vector3.Distance(shipTransform.position, cursorWorldSpacePosition.position);
-        Quaternion targetRotation;
-
-        if (shipCursorDistance > minLookAtDistance && shipCursorDistance < maxLookAtDistance) targetRotation = Quaternion.LookRotation(cursorWorldSpacePosition.position - shipModelTransform.position);
-        else targetRotation = Quaternion.LookRotation(defaultSpaceshipLookPoint.position - shipModelTransform.position);
-
-        shipModelTransform.rotation = Quaternion.Slerp(shipModelTransform.rotation, targetRotation, lookAtRotationSpeed * Time.deltaTime);
+        // gets the normalized direction vector from center of the planet to the ship after it moved forward
+        // and then sets the position of the ship again to preserve distance from planet
+        Vector3 spaceShipDirection = (shipTransform.position - gravityBoundGameObject.transform.position).normalized;
+        shipTransform.position = gravityBoundGameObject.transform.position + spaceShipDirection * (planetSize / 2 + heightAbovePlanet);
+        shipTransform.up = spaceShipDirection;
     }
 }
