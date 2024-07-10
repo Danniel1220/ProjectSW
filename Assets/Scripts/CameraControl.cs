@@ -61,10 +61,16 @@ public class CameraControl : MonoBehaviour
             // if the mouse moved on y axis on screen move the anchor look point up or down
             if (delta.y != 0)
             {
+                /*
                 cameraAnchorLookPoint.position = new Vector3(
                     cameraAnchorLookPoint.position.x,
-                    Mathf.Clamp(cameraAnchorLookPoint.position.y + (delta.y * cameraYMultiplier), cameraAnchor.position.y + cameraMinYClamp, cameraAnchor.position.y + cameraMaxYClamp), // camera is clamped on the Y angle to prevent weird interactions with the anchor
+                    Mathf.Clamp(cameraAnchorLookPoint.position.y + (delta.y * cameraYMultiplier), 
+                        cameraAnchor.position.y + cameraMinYClamp, 
+                        cameraAnchor.position.y + cameraMaxYClamp), // camera is clamped on the (local) Y axis
                     cameraAnchorLookPoint.position.z);
+                */
+
+                cameraAnchorLookPoint.position += cameraAnchorLookPoint.TransformDirection(Vector3.up) * delta.y * cameraYMultiplier;
 
             }
             // if the mouse moved on x axis on screen, rotate the anchor look point around the anchor
