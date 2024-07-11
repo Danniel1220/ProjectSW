@@ -60,49 +60,78 @@ public class SpaceshipMovementController : MonoBehaviour
 
     private void handleMovement()
     {
+        // forwards-backwards and up-down movement
+
+        // assume the player does not move at all at first
+        float movementDelta = 0;
+        float altitudeDelta = 0;
+        float distanceFromGravityBoundObject = Vector3.Distance(gravityBoundGameObject.transform.position, shipTransform.position);
+
         // W
         if (inputValues[0])
         {
             shipTransform.position += transform.forward * movementSpeed * Time.deltaTime;
+            movementDelta = movementSpeed * Time.deltaTime;
         }
         // S
         if (inputValues[2])
         {
             shipTransform.position -= transform.forward * movementSpeed * Time.deltaTime;
+            movementDelta = movementSpeed * Time.deltaTime;
         }
         // Space
         if (inputValues[4])
         {
-            // going up means moving away from the body we are gravitationally bound to
+            // going up means moving away from the body the player is gravitationally bound to
             shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, -movementSpeed * Time.deltaTime);
             heightAbovePlanet += movementSpeed * Time.deltaTime;
+            altitudeDelta = movementSpeed * Time.deltaTime;
         }
         // Left Shift
         if (inputValues[5])
         {
-            // going down means moving towards the body we are gravitationally bound to
+            // going down means moving towards the body the player is gravitationally bound to
             shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, movementSpeed * Time.deltaTime);
             heightAbovePlanet -= movementSpeed * Time.deltaTime;
+            altitudeDelta = -movementSpeed * Time.deltaTime;
         }
+
+        float distanceFromGravityBoundObject2 = Vector3.Distance(gravityBoundGameObject.transform.position, shipTransform.position);
 
         // gets the normalized direction vector from center of the planet to the ship after it moved forward
         // and then sets the position of the ship again to preserve distance from planet
         Vector3 spaceShipDirection = (shipTransform.position - gravityBoundGameObject.transform.position).normalized;
         shipTransform.position = gravityBoundGameObject.transform.position + spaceShipDirection * (planetSize / 2 + heightAbovePlanet);
-        shipTransform.up = spaceShipDirection;
+        //shipTransform.up = spaceShipDirection;
 
+        // this represents the difference in altitude between the moment where the player is stationary and the moment after the movement is applied
+        float realAltitudeDelta = distanceFromGravityBoundObject2 - distanceFromGravityBoundObject - altitudeDelta;
+        // pythagorean theorem to find the distance traveled in the current frame
+        float diagonal = Mathf.Sqrt(realAltitudeDelta * realAltitudeDelta + movementDelta * movementDelta);
+        // the angle at which the ship should turn on the local X axis after the movement was applied
+        // in an ABC right scalence triangle where ABC is the right angle, AB is the long side (movementDelta), BC (realAltitudeDelta) is the short side
+        // this would be angle BAC
+        float angle = Mathf.Asin(realAltitudeDelta / diagonal) * (180 / Mathf.PI);
+        // fallback to 0 if the calculation fails (this happens when no movement is done)
+        // also if the angle is 90 or -90 degrees it means the angle float underflowed because the realAltitudeDelta has a stupidly small value in it
+        if (float.IsNaN(angle) || !(angle > -90 && angle < 90)) angle = 0;
+        shipTransform.Rotate(angle, 0, 0);
+
+        Debug.Log("realAltitudeDelta = " + realAltitudeDelta);
+        Debug.Log("angle = " + angle);
+
+
+        // left-right movement
 
         // A
         if (inputValues[1])
         {
-            Debug.Log("A");
             shipTransform.Rotate(new Vector3(0, -movementSpeed * Time.deltaTime, 0), Space.Self);
         }
 
         // D
         if (inputValues[3])
         {
-            Debug.Log("D");
             shipTransform.Rotate(new Vector3(0, movementSpeed * Time.deltaTime, 0), Space.Self);
         }
     }
