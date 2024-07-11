@@ -12,19 +12,18 @@ public class CameraControl : MonoBehaviour
     private Transform cameraAnchorLookPoint;
 
     private Vector3 lastMousePosition;
-    [SerializeField] private float cameraMaxYClamp = 4f;
-    [SerializeField] private float cameraMinYClamp = -4f;
+    private float cameraMaxYClamp = 4f;
 
-    [SerializeField] private float cameraYMultiplier = 0.05f;
-    [SerializeField] private float cameraXMultiplier = 100f;
+    private float cameraYMultiplier = 0.05f;
+    private float cameraXMultiplier = 100f;
 
-    [SerializeField] private float zoomMinDistance = 4;
-    [SerializeField] private float zoomMaxDistance = 12;
-    [SerializeField] private float zoomCurrentMultiplier = 1f;
-    [SerializeField] private float zoomSmoothingFactor = 2f;
+    private float zoomMinDistance = 4;
+    private float zoomMaxDistance = 12;
+    private float zoomCurrentMultiplier = 1f;
+    private float zoomSmoothingFactor = 2f;
 
-    [SerializeField] private float zoomDelta;
-    [SerializeField] private float targetZoom = 4f;
+    private float zoomDelta;
+    private float targetZoom = 4f;
 
     // Start is called before the first frame update
     void Start()

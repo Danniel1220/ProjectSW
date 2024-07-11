@@ -10,12 +10,6 @@ public class SpaceshipMovementController : MonoBehaviour
     Transform cursorWorldSpacePosition;
     GameObject gravityBoundGameObject;
 
-    float forwardMovement;
-    float backwardMovement;
-    float rightMovement;
-    float leftMovement;
-    float upMovement;
-    float downMovement;
     bool[] inputValues = new bool[6];
 
     [SerializeField] float movementSpeed = 20f;
@@ -71,27 +65,17 @@ public class SpaceshipMovementController : MonoBehaviour
         {
             shipTransform.position += transform.forward * movementSpeed * Time.deltaTime;
         }
-        // A
-        if (inputValues[1])
-        {
-            shipTransform.position -= transform.right * movementSpeed * Time.deltaTime;
-        }
         // S
         if (inputValues[2])
         {
-            shipTransform.position -= transform.forward *  movementSpeed * Time.deltaTime;
-        }
-        // D
-        if (inputValues[3])
-        {
-            shipTransform.position += transform.right * movementSpeed * Time.deltaTime;
+            shipTransform.position -= transform.forward * movementSpeed * Time.deltaTime;
         }
         // Space
         if (inputValues[4])
         {
             // going up means moving away from the body we are gravitationally bound to
             shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, -movementSpeed * Time.deltaTime);
-            heightAbovePlanet += movementSpeed * Time.deltaTime; 
+            heightAbovePlanet += movementSpeed * Time.deltaTime;
         }
         // Left Shift
         if (inputValues[5])
@@ -106,5 +90,20 @@ public class SpaceshipMovementController : MonoBehaviour
         Vector3 spaceShipDirection = (shipTransform.position - gravityBoundGameObject.transform.position).normalized;
         shipTransform.position = gravityBoundGameObject.transform.position + spaceShipDirection * (planetSize / 2 + heightAbovePlanet);
         shipTransform.up = spaceShipDirection;
+
+
+        // A
+        if (inputValues[1])
+        {
+            Debug.Log("A");
+            shipTransform.Rotate(new Vector3(0, -movementSpeed * Time.deltaTime, 0), Space.Self);
+        }
+
+        // D
+        if (inputValues[3])
+        {
+            Debug.Log("D");
+            shipTransform.Rotate(new Vector3(0, movementSpeed * Time.deltaTime, 0), Space.Self);
+        }
     }
 }
