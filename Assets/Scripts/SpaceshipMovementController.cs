@@ -117,9 +117,6 @@ public class SpaceshipMovementController : MonoBehaviour
         if (float.IsNaN(angle) || !(angle > -90 && angle < 90)) angle = 0;
         shipTransform.Rotate(angle, 0, 0);
 
-        Debug.Log("realAltitudeDelta = " + realAltitudeDelta);
-        Debug.Log("angle = " + angle);
-
 
         // left-right movement
 
