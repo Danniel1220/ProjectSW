@@ -61,25 +61,19 @@ public class CameraControl : MonoBehaviour
             // if the mouse moved on y axis on screen move the anchor look point up or down
             if (delta.y != 0)
             {
-                /*
-                cameraAnchorLookPoint.position = new Vector3(
-                    cameraAnchorLookPoint.position.x,
-                    Mathf.Clamp(cameraAnchorLookPoint.position.y + (delta.y * cameraYMultiplier), 
-                        cameraAnchor.position.y + cameraMinYClamp, 
-                        cameraAnchor.position.y + cameraMaxYClamp), // camera is clamped on the (local) Y axis
-                    cameraAnchorLookPoint.position.z);
-                */
-
                 cameraAnchorLookPoint.position += cameraAnchorLookPoint.TransformDirection(Vector3.up) * delta.y * cameraYMultiplier;
-
-            }
-            // if the mouse moved on x axis on screen, rotate the anchor look point around the anchor
+                cameraAnchorLookPoint.position = new Vector3(
+                    cameraAnchorLookPoint.position.x, 
+                    Mathf.Clamp(cameraAnchorLookPoint.position.y, shipTransform.position.y - cameraMaxYClamp, shipTransform.position.y + cameraMaxYClamp), 
+                    cameraAnchorLookPoint.position.z);
+                }
+            // if the mouse moved on x axis on screen, rotate the anchor look point around the player
             if (delta.x != 0)
             {
                 //cameraAnchorLookPoint.RotateAround(cameraAnchor.position, Vector3.up, delta.x * Time.deltaTime * cameraXMultiplier);
                 //defaultSpaceshipLookPoint.RotateAround(cameraAnchor.position, Vector3.up, delta.x * Time.deltaTime * cameraXMultiplier);
 
-                shipTransform.RotateAround(shipTransform.position, Vector3.up, delta.x * cameraXMultiplier * Time.deltaTime);
+                cameraAnchorLookPoint.RotateAround(shipTransform.position, cameraAnchorLookPoint.up, delta.x * cameraXMultiplier * Time.deltaTime);
             }
 
         }
