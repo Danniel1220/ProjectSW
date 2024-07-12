@@ -12,7 +12,15 @@ public class SpaceshipMovementController : MonoBehaviour
 
     bool[] inputValues = new bool[6];
 
-    [SerializeField] float movementSpeed = 20f;
+    float movementSpeed = 20f;
+
+    float yawAngle = 0f;
+    float pitchAngle = 25f;
+    float rollAngle = 0f;
+
+    float yawTurnSpeed = 0f;
+    float pitchTurnSpeed = 12f;
+    float rollTurnSpeed = 0f;
 
     float minLookAtDistance = 2f;
     float maxLookAtDistance = 12f;
@@ -60,6 +68,8 @@ public class SpaceshipMovementController : MonoBehaviour
 
     private void handleMovement()
     {
+        float shipTransformCurrentRotationX = shipTransform.rotation.eulerAngles.x;
+
         // forwards-backwards and up-down movement
 
         // assume the player does not move at all at first
@@ -74,27 +84,51 @@ public class SpaceshipMovementController : MonoBehaviour
             movementDelta = movementSpeed * Time.deltaTime;
         }
         // S
-        if (inputValues[2])
+        else if (inputValues[2])
         {
             shipTransform.position -= transform.forward * movementSpeed * Time.deltaTime;
             movementDelta = movementSpeed * Time.deltaTime;
         }
+        // Space + Left Shift
+        if (inputValues[4] && inputValues[5])
+        {
+            shipModelTransform.rotation = Quaternion.Slerp(
+                    shipModelTransform.rotation,
+                    shipTransform.rotation,
+                    pitchTurnSpeed * Time.deltaTime);
+        }
         // Space
-        if (inputValues[4])
+        else if (inputValues[4])
         {
             // going up means moving away from the body the player is gravitationally bound to
             shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, -movementSpeed * Time.deltaTime);
             heightAbovePlanet += movementSpeed * Time.deltaTime;
             altitudeDelta = movementSpeed * Time.deltaTime;
+            shipModelTransform.rotation = Quaternion.Slerp(
+                shipModelTransform.rotation, 
+                shipTransform.rotation * Quaternion.Euler(-pitchAngle, 0, 0), 
+                pitchTurnSpeed * Time.deltaTime);
         }
         // Left Shift
-        if (inputValues[5])
+        else if (inputValues[5])
         {
             // going down means moving towards the body the player is gravitationally bound to
             shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, movementSpeed * Time.deltaTime);
             heightAbovePlanet -= movementSpeed * Time.deltaTime;
             altitudeDelta = -movementSpeed * Time.deltaTime;
+            shipModelTransform.rotation = Quaternion.Slerp(
+                shipModelTransform.rotation,
+                shipTransform.rotation * Quaternion.Euler(pitchAngle, 0, 0),
+                pitchTurnSpeed * Time.deltaTime);
         }
+        else
+        {
+            shipModelTransform.rotation = Quaternion.Slerp(
+                    shipModelTransform.rotation,
+                    shipTransform.rotation,
+                    pitchTurnSpeed * Time.deltaTime);
+        }
+
 
         float distanceFromGravityBoundObject2 = Vector3.Distance(gravityBoundGameObject.transform.position, shipTransform.position);
 
@@ -116,6 +150,8 @@ public class SpaceshipMovementController : MonoBehaviour
         // also if the angle is 90 or -90 degrees it means the angle float underflowed because the realAltitudeDelta has a stupidly small value in it
         if (float.IsNaN(angle) || !(angle > -90 && angle < 90)) angle = 0;
         shipTransform.Rotate(angle, 0, 0);
+
+
 
 
         // left-right movement
