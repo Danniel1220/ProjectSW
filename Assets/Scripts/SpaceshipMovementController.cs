@@ -16,11 +16,11 @@ public class SpaceshipMovementController : MonoBehaviour
 
     float yawAngle = 0f;
     float pitchAngle = 25f;
-    float rollAngle = 0f;
+    float rollAngle = 25f;
 
     float yawTurnSpeed = 0f;
     float pitchTurnSpeed = 12f;
-    float rollTurnSpeed = 0f;
+    float rollTurnSpeed = 12f;
 
     float minLookAtDistance = 2f;
     float maxLookAtDistance = 12f;
@@ -83,15 +83,18 @@ public class SpaceshipMovementController : MonoBehaviour
             shipTransform.position += transform.forward * movementSpeed * Time.deltaTime;
             movementDelta = movementSpeed * Time.deltaTime;
         }
+
         // S
         else if (inputValues[2])
         {
             shipTransform.position -= transform.forward * movementSpeed * Time.deltaTime;
             movementDelta = movementSpeed * Time.deltaTime;
         }
+
         // Space + Left Shift
         if (inputValues[4] && inputValues[5])
         {
+            // pitch angle fallback
             shipModelTransform.rotation = Quaternion.Slerp(
                     shipModelTransform.rotation,
                     shipTransform.rotation,
@@ -104,6 +107,7 @@ public class SpaceshipMovementController : MonoBehaviour
             shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, -movementSpeed * Time.deltaTime);
             heightAbovePlanet += movementSpeed * Time.deltaTime;
             altitudeDelta = movementSpeed * Time.deltaTime;
+            // pitch angle
             shipModelTransform.rotation = Quaternion.Slerp(
                 shipModelTransform.rotation, 
                 shipTransform.rotation * Quaternion.Euler(-pitchAngle, 0, 0), 
@@ -116,6 +120,7 @@ public class SpaceshipMovementController : MonoBehaviour
             shipTransform.position = Vector3.MoveTowards(shipTransform.position, gravityBoundGameObject.transform.position, movementSpeed * Time.deltaTime);
             heightAbovePlanet -= movementSpeed * Time.deltaTime;
             altitudeDelta = -movementSpeed * Time.deltaTime;
+            // pitch angle
             shipModelTransform.rotation = Quaternion.Slerp(
                 shipModelTransform.rotation,
                 shipTransform.rotation * Quaternion.Euler(pitchAngle, 0, 0),
@@ -123,6 +128,7 @@ public class SpaceshipMovementController : MonoBehaviour
         }
         else
         {
+            // pitch angle fallback
             shipModelTransform.rotation = Quaternion.Slerp(
                     shipModelTransform.rotation,
                     shipTransform.rotation,
@@ -156,16 +162,41 @@ public class SpaceshipMovementController : MonoBehaviour
 
         // left-right movement
 
+        if (inputValues[1] && inputValues[3])
+        {
+            // roll angle fallback
+            shipModelTransform.rotation = Quaternion.Slerp(
+                shipModelTransform.rotation,
+                shipTransform.rotation * Quaternion.Euler(0, 0, 0),
+                pitchTurnSpeed * Time.deltaTime);
+        }
         // A
-        if (inputValues[1])
+        else if (inputValues[1])
         {
             shipTransform.Rotate(new Vector3(0, -movementSpeed * Time.deltaTime, 0), Space.Self);
+            // roll
+            shipModelTransform.rotation = Quaternion.Slerp(
+                shipModelTransform.rotation,
+                shipTransform.rotation * Quaternion.Euler(0, 0, rollAngle),
+                pitchTurnSpeed * Time.deltaTime);
         }
-
         // D
-        if (inputValues[3])
+        else if (inputValues[3])
         {
             shipTransform.Rotate(new Vector3(0, movementSpeed * Time.deltaTime, 0), Space.Self);
+            // roll
+            shipModelTransform.rotation = Quaternion.Slerp(
+                shipModelTransform.rotation,
+                shipTransform.rotation * Quaternion.Euler(0, 0, -rollAngle),
+                rollTurnSpeed * Time.deltaTime);
+        }
+        else
+        {
+            // roll angle fallback
+            shipModelTransform.rotation = Quaternion.Slerp(
+                shipModelTransform.rotation,
+                shipTransform.rotation * Quaternion.Euler(0, 0, 0),
+                rollTurnSpeed * Time.deltaTime);
         }
     }
 }
