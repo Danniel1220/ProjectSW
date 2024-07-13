@@ -13,14 +13,16 @@ public class SpaceshipMovementController : MonoBehaviour
     bool[] inputValues = new bool[6];
 
     float movementSpeed = 20f;
+    float turnSpeed = 40f;
 
     float yawAngle = 0f;
-    float pitchAngle = 25f;
-    float rollAngle = 25f;
+    float pitchAngle = 60f;
+    float rollAngle = 30f;
 
     float yawTurnSpeed = 0f;
-    float pitchTurnSpeed = 12f;
+    float pitchTurnSpeed = 8f;
     float rollTurnSpeed = 12f;
+    float fallbackTurnSpeed = 20f;
 
     float minLookAtDistance = 2f;
     float maxLookAtDistance = 12f;
@@ -68,7 +70,9 @@ public class SpaceshipMovementController : MonoBehaviour
 
     private void handleMovement()
     {
-        float shipTransformCurrentRotationX = shipTransform.rotation.eulerAngles.x;
+        // default ship target rotation is equal to zero for each axis
+        Quaternion shipTargetPitch = Quaternion.identity;
+        Quaternion shipTargetRoll = Quaternion.identity;
 
         // forwards-backwards and up-down movement
 
@@ -88,17 +92,13 @@ public class SpaceshipMovementController : MonoBehaviour
         else if (inputValues[2])
         {
             shipTransform.position -= transform.forward * movementSpeed * Time.deltaTime;
-            movementDelta = movementSpeed * Time.deltaTime;
+            movementDelta = -movementSpeed * Time.deltaTime;
         }
 
         // Space + Left Shift
         if (inputValues[4] && inputValues[5])
         {
-            // pitch angle fallback
-            shipModelTransform.rotation = Quaternion.Slerp(
-                    shipModelTransform.rotation,
-                    shipTransform.rotation,
-                    pitchTurnSpeed * Time.deltaTime);
+            // do nothing basically
         }
         // Space
         else if (inputValues[4])
@@ -108,10 +108,8 @@ public class SpaceshipMovementController : MonoBehaviour
             heightAbovePlanet += movementSpeed * Time.deltaTime;
             altitudeDelta = movementSpeed * Time.deltaTime;
             // pitch angle
-            shipModelTransform.rotation = Quaternion.Slerp(
-                shipModelTransform.rotation, 
-                shipTransform.rotation * Quaternion.Euler(-pitchAngle, 0, 0), 
-                pitchTurnSpeed * Time.deltaTime);
+            shipTargetPitch *= Quaternion.Euler(-pitchAngle, 0, 0);
+
         }
         // Left Shift
         else if (inputValues[5])
@@ -121,29 +119,22 @@ public class SpaceshipMovementController : MonoBehaviour
             heightAbovePlanet -= movementSpeed * Time.deltaTime;
             altitudeDelta = -movementSpeed * Time.deltaTime;
             // pitch angle
-            shipModelTransform.rotation = Quaternion.Slerp(
-                shipModelTransform.rotation,
-                shipTransform.rotation * Quaternion.Euler(pitchAngle, 0, 0),
-                pitchTurnSpeed * Time.deltaTime);
+            shipTargetPitch *= Quaternion.Euler(pitchAngle, 0, 0);           
         }
-        else
+
+        // check if the player is moving backwards and change the movementDelta to its absolute value so that angle calculations arent fucked
+        bool movingBackwardsFlag = false;
+        if (movementDelta < 0)
         {
-            // pitch angle fallback
-            shipModelTransform.rotation = Quaternion.Slerp(
-                    shipModelTransform.rotation,
-                    shipTransform.rotation,
-                    pitchTurnSpeed * Time.deltaTime);
+            movingBackwardsFlag = true;
+            movementDelta = Mathf.Abs(movementDelta);
         }
-
-
+        // some fucked calculations inc. to figure out how much to angle the ship as it goes around a sphere
         float distanceFromGravityBoundObject2 = Vector3.Distance(gravityBoundGameObject.transform.position, shipTransform.position);
-
         // gets the normalized direction vector from center of the planet to the ship after it moved forward
         // and then sets the position of the ship again to preserve distance from planet
         Vector3 spaceShipDirection = (shipTransform.position - gravityBoundGameObject.transform.position).normalized;
         shipTransform.position = gravityBoundGameObject.transform.position + spaceShipDirection * (planetSize / 2 + heightAbovePlanet);
-        //shipTransform.up = spaceShipDirection;
-
         // this represents the difference in altitude between the moment where the player is stationary and the moment after the movement is applied
         float realAltitudeDelta = distanceFromGravityBoundObject2 - distanceFromGravityBoundObject - altitudeDelta;
         // pythagorean theorem to find the distance traveled in the current frame
@@ -155,48 +146,63 @@ public class SpaceshipMovementController : MonoBehaviour
         // fallback to 0 if the calculation fails (this happens when no movement is done)
         // also if the angle is 90 or -90 degrees it means the angle float underflowed because the realAltitudeDelta has a stupidly small value in it
         if (float.IsNaN(angle) || !(angle > -90 && angle < 90)) angle = 0;
-        shipTransform.Rotate(angle, 0, 0);
 
-
+        // if the player moved backwards reverse the angle of rotation
+        if (movingBackwardsFlag) shipTransform.Rotate(-angle, 0, 0);
+        else shipTransform.Rotate(angle, 0, 0);
 
 
         // left-right movement
 
         if (inputValues[1] && inputValues[3])
         {
-            // roll angle fallback
-            shipModelTransform.rotation = Quaternion.Slerp(
-                shipModelTransform.rotation,
-                shipTransform.rotation * Quaternion.Euler(0, 0, 0),
-                pitchTurnSpeed * Time.deltaTime);
+            // do nothing basically
         }
         // A
         else if (inputValues[1])
         {
-            shipTransform.Rotate(new Vector3(0, -movementSpeed * Time.deltaTime, 0), Space.Self);
-            // roll
-            shipModelTransform.rotation = Quaternion.Slerp(
-                shipModelTransform.rotation,
-                shipTransform.rotation * Quaternion.Euler(0, 0, rollAngle),
-                pitchTurnSpeed * Time.deltaTime);
+            shipTransform.Rotate(new Vector3(0, -turnSpeed * Time.deltaTime, 0), Space.Self);
+            // add left roll
+            shipTargetRoll *= Quaternion.Euler(0, 0, rollAngle);
+
         }
         // D
         else if (inputValues[3])
         {
-            shipTransform.Rotate(new Vector3(0, movementSpeed * Time.deltaTime, 0), Space.Self);
-            // roll
+            shipTransform.Rotate(new Vector3(0, turnSpeed * Time.deltaTime, 0), Space.Self);
+            // add right roll
+            shipTargetRoll *= Quaternion.Euler(0, 0, -rollAngle);
+        }
+
+
+        // handling rotation
+        if (shipTargetPitch == Quaternion.identity &&  shipTargetRoll == Quaternion.identity)
+        {
+            shipModelTransform.rotation = Quaternion.Slerp(
+                    shipModelTransform.rotation,
+                    shipTransform.rotation,
+                    fallbackTurnSpeed * Time.deltaTime);
+        }
+        if (shipTargetPitch != Quaternion.identity)
+        {
             shipModelTransform.rotation = Quaternion.Slerp(
                 shipModelTransform.rotation,
-                shipTransform.rotation * Quaternion.Euler(0, 0, -rollAngle),
+                shipTransform.rotation * shipTargetPitch,
+                pitchTurnSpeed * Time.deltaTime);
+        }
+        if (shipTargetRoll != Quaternion.identity)
+        {
+            shipModelTransform.rotation = Quaternion.Slerp(
+                shipModelTransform.rotation,
+                shipTransform.rotation * shipTargetRoll,
                 rollTurnSpeed * Time.deltaTime);
         }
-        else
+        if (shipTargetPitch != Quaternion.identity && shipTargetRoll != Quaternion.identity)
         {
-            // roll angle fallback
             shipModelTransform.rotation = Quaternion.Slerp(
                 shipModelTransform.rotation,
-                shipTransform.rotation * Quaternion.Euler(0, 0, 0),
-                rollTurnSpeed * Time.deltaTime);
+                shipTransform.rotation * shipTargetRoll,
+                pitchTurnSpeed * Time.deltaTime); // using pitch turn speed in case more than 1 axis is turned at the same time because pitch is the most gentle rotation
         }
     }
 }
