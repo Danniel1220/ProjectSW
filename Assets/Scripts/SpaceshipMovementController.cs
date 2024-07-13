@@ -74,12 +74,13 @@ public class SpaceshipMovementController : MonoBehaviour
         Quaternion shipTargetPitch = Quaternion.identity;
         Quaternion shipTargetRoll = Quaternion.identity;
 
-        // forwards-backwards and up-down movement
-
         // assume the player does not move at all at first
         float movementDelta = 0;
         float altitudeDelta = 0;
         float distanceFromGravityBoundObject = Vector3.Distance(gravityBoundGameObject.transform.position, shipTransform.position);
+
+
+        // forwards-backwards and up-down movement
 
         // W
         if (inputValues[0])
@@ -119,37 +120,8 @@ public class SpaceshipMovementController : MonoBehaviour
             heightAbovePlanet -= movementSpeed * Time.deltaTime;
             altitudeDelta = -movementSpeed * Time.deltaTime;
             // pitch angle
-            shipTargetPitch *= Quaternion.Euler(pitchAngle, 0, 0);           
+            shipTargetPitch *= Quaternion.Euler(pitchAngle, 0, 0);
         }
-
-        // check if the player is moving backwards and change the movementDelta to its absolute value so that angle calculations arent fucked
-        bool movingBackwardsFlag = false;
-        if (movementDelta < 0)
-        {
-            movingBackwardsFlag = true;
-            movementDelta = Mathf.Abs(movementDelta);
-        }
-        // some fucked calculations inc. to figure out how much to angle the ship as it goes around a sphere
-        float distanceFromGravityBoundObject2 = Vector3.Distance(gravityBoundGameObject.transform.position, shipTransform.position);
-        // gets the normalized direction vector from center of the planet to the ship after it moved forward
-        // and then sets the position of the ship again to preserve distance from planet
-        Vector3 spaceShipDirection = (shipTransform.position - gravityBoundGameObject.transform.position).normalized;
-        shipTransform.position = gravityBoundGameObject.transform.position + spaceShipDirection * (planetSize / 2 + heightAbovePlanet);
-        // this represents the difference in altitude between the moment where the player is stationary and the moment after the movement is applied
-        float realAltitudeDelta = distanceFromGravityBoundObject2 - distanceFromGravityBoundObject - altitudeDelta;
-        // pythagorean theorem to find the distance traveled in the current frame
-        float diagonal = Mathf.Sqrt(realAltitudeDelta * realAltitudeDelta + movementDelta * movementDelta);
-        // the angle at which the ship should turn on the local X axis after the movement was applied
-        // in an ABC right scalence triangle where ABC is the right angle, AB is the long side (movementDelta), BC (realAltitudeDelta) is the short side
-        // this would be angle BAC
-        float angle = Mathf.Asin(realAltitudeDelta / diagonal) * (180 / Mathf.PI);
-        // fallback to 0 if the calculation fails (this happens when no movement is done)
-        // also if the angle is 90 or -90 degrees it means the angle float underflowed because the realAltitudeDelta has a stupidly small value in it
-        if (float.IsNaN(angle) || !(angle > -90 && angle < 90)) angle = 0;
-
-        // if the player moved backwards reverse the angle of rotation
-        if (movingBackwardsFlag) shipTransform.Rotate(-angle, 0, 0);
-        else shipTransform.Rotate(angle, 0, 0);
 
 
         // left-right movement
@@ -174,9 +146,49 @@ public class SpaceshipMovementController : MonoBehaviour
             shipTargetRoll *= Quaternion.Euler(0, 0, -rollAngle);
         }
 
+        float fauxGravityRotationAngle = computeFauxGravityRotationAngle(movementDelta, altitudeDelta, distanceFromGravityBoundObject);
+        shipTransform.Rotate(fauxGravityRotationAngle, 0, 0);
 
-        // handling rotation
-        if (shipTargetPitch == Quaternion.identity &&  shipTargetRoll == Quaternion.identity)
+        handleRotation(shipTargetPitch, shipTargetRoll);
+    }
+
+    private float computeFauxGravityRotationAngle(float movementDelta, float altitudeDelta, float initialDistanceFromGravityBoundObject)
+    {
+        // check wether the player moved forward or backwards to know later if the resulting angle should be positive or negative
+        bool movedForward;
+        if (movementDelta > 0) movedForward = true;
+        else movedForward = false;
+
+        // grabbing absolute value of the movement delta because negative values make no sense in this context
+        movementDelta = Mathf.Abs(movementDelta);
+
+
+        // some fucked calculations inc. to figure out how much to angle the ship as it goes around a sphere
+        float distanceFromGravityBoundObjectAfterMovement = Vector3.Distance(gravityBoundGameObject.transform.position, shipTransform.position);
+        // gets the normalized direction vector from center of the planet to the ship after it moved forward
+        // and then sets the position of the ship again to preserve distance from planet
+        Vector3 spaceShipDirection = (shipTransform.position - gravityBoundGameObject.transform.position).normalized;
+        shipTransform.position = gravityBoundGameObject.transform.position + spaceShipDirection * (planetSize / 2 + heightAbovePlanet);
+        // this represents the difference in altitude between the moment where the player is stationary and the moment after the movement is applied
+        float realAltitudeDelta = distanceFromGravityBoundObjectAfterMovement - initialDistanceFromGravityBoundObject - altitudeDelta;
+        // pythagorean theorem to find the distance traveled in the current frame
+        float diagonal = Mathf.Sqrt(realAltitudeDelta * realAltitudeDelta + movementDelta * movementDelta);
+        // the angle at which the ship should turn on the local X axis after the movement was applied
+        // in an ABC right scalence triangle where ABC is the right angle, AB is the long side (movementDelta), BC (realAltitudeDelta) is the short side
+        // this would be angle BAC
+        float angle = Mathf.Asin(realAltitudeDelta / diagonal) * (180 / Mathf.PI);
+        // fallback to 0 if the calculation fails (this happens when no movement is done)
+        // also if the angle is 90 or -90 degrees it means the angle float underflowed because the realAltitudeDelta has a stupidly small value in it
+        if (float.IsNaN(angle) || !(angle > -90 && angle < 90)) angle = 0;
+
+        // if the player moved forward return the regular angle, negative angle for backwards movement
+        if (movedForward) return angle;
+        else return -angle;
+    }
+
+    private void handleRotation(Quaternion shipTargetPitch, Quaternion shipTargetRoll)
+    {
+        if (shipTargetPitch == Quaternion.identity && shipTargetRoll == Quaternion.identity)
         {
             shipModelTransform.rotation = Quaternion.Slerp(
                     shipModelTransform.rotation,
