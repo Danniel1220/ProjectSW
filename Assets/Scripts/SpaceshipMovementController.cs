@@ -26,7 +26,8 @@ public class SpaceshipMovementController : MonoBehaviour
 
     float minLookAtDistance = 2f;
     float maxLookAtDistance = 12f;
-    float lookAtRotationSpeed = 10f;
+    float shipAimRotationSpeed = 10f;
+    bool isAiming;
 
     float planetSize = 100f;
     float heightAbovePlanet = 2f;
@@ -45,6 +46,7 @@ public class SpaceshipMovementController : MonoBehaviour
     {
         getKeyboardInput();
         handleMovement();
+        aiming();
     }
 
     private void getKeyboardInput()
@@ -149,7 +151,7 @@ public class SpaceshipMovementController : MonoBehaviour
         float fauxGravityRotationAngle = computeFauxGravityRotationAngle(movementDelta, altitudeDelta, distanceFromGravityBoundObject);
         shipTransform.Rotate(fauxGravityRotationAngle, 0, 0);
 
-        handleRotation(shipTargetPitch, shipTargetRoll);
+        applyPitchYawRoll(shipTargetPitch, shipTargetRoll);
     }
 
     private float computeFauxGravityRotationAngle(float movementDelta, float altitudeDelta, float initialDistanceFromGravityBoundObject)
@@ -186,8 +188,10 @@ public class SpaceshipMovementController : MonoBehaviour
         else return -angle;
     }
 
-    private void handleRotation(Quaternion shipTargetPitch, Quaternion shipTargetRoll)
+    private void applyPitchYawRoll(Quaternion shipTargetPitch, Quaternion shipTargetRoll)
     {
+        if (isAiming) return; // if the ship is currently aiming at something skip any change in pitch/yaw/roll
+
         if (shipTargetPitch == Quaternion.identity && shipTargetRoll == Quaternion.identity)
         {
             shipModelTransform.rotation = Quaternion.Slerp(
@@ -216,5 +220,25 @@ public class SpaceshipMovementController : MonoBehaviour
                 shipTransform.rotation * shipTargetRoll,
                 pitchTurnSpeed * Time.deltaTime); // using pitch turn speed in case more than 1 axis is turned at the same time because pitch is the most gentle rotation
         }
+    }
+
+    void aiming()
+    {
+        float shipCursorDistance = Vector3.Distance(shipTransform.position, cursorWorldSpacePosition.position);
+        Quaternion targetRotation;
+
+        if (shipCursorDistance > minLookAtDistance && shipCursorDistance < maxLookAtDistance)
+        {
+            targetRotation = Quaternion.LookRotation(cursorWorldSpacePosition.position - shipModelTransform.position, shipTransform.up);
+            shipModelTransform.rotation = Quaternion.Slerp(shipModelTransform.rotation, targetRotation, shipAimRotationSpeed * Time.deltaTime);
+
+            isAiming = true;
+        }
+        else isAiming = false;
+    }
+
+    public void applyCameraRotation(float xAxisDelta)
+    {
+        shipTransform.rotation *= Quaternion.Euler(0, xAxisDelta, 0);
     }
 }

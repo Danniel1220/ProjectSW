@@ -69,10 +69,8 @@ public class CameraControl : MonoBehaviour
             // if the mouse moved on x axis on screen, rotate the anchor look point around the player
             if (delta.x != 0)
             {
-                //cameraAnchorLookPoint.RotateAround(cameraAnchor.position, Vector3.up, delta.x * Time.deltaTime * cameraXMultiplier);
-                //defaultSpaceshipLookPoint.RotateAround(cameraAnchor.position, Vector3.up, delta.x * Time.deltaTime * cameraXMultiplier);
-
-                cameraAnchorLookPoint.RotateAround(shipTransform.position, cameraAnchorLookPoint.up, delta.x * cameraXMultiplier * Time.deltaTime);
+                //cameraAnchorLookPoint.RotateAround(shipTransform.position, cameraAnchorLookPoint.up, delta.x * cameraXMultiplier * Time.deltaTime);
+                GameManagers.spaceshipMovementController.applyCameraRotation(delta.x);
             }
 
         }
